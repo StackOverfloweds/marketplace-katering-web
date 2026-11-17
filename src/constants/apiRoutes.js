@@ -1,4 +1,3 @@
-
 const API_ROUTES = {
     AUTH: {
       REGISTER: '/auth/register',
@@ -7,22 +6,24 @@ const API_ROUTES = {
       LOGOUT: '/auth/logout',
     },
   
+    MERCHANTS: {
+      BASE: '/merchants',
+      DETAIL: (id) => `/merchants/${id}`,
+    },
+  
     CATEGORIES: {
       BASE: '/categories',
       MY: '/categories/my',
-  
       DETAIL: (id) => `/categories/${id}`,
     },
   
     MENUS: {
       BASE: '/menus',
-  
       DETAIL: (id) => `/menus/${id}`,
     },
   
     ORDERS: {
       BASE: '/orders',
-  
       DETAIL: (id) => `/orders/${id}`,
       CANCEL: (id) => `/orders/${id}/cancel`,
       UPDATE_STATUS: (id) => `/orders/${id}/status`,
@@ -30,10 +31,8 @@ const API_ROUTES = {
   
     INVOICES: {
       BASE: '/invoices',
-  
       DETAIL: (id) => `/invoices/${id}`,
     },
   }
   
   export default API_ROUTES
-  

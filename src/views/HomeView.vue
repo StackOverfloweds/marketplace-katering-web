@@ -1,49 +1,166 @@
 
 <script setup>
-const appName = import.meta.env.VITE_APP_NAME
-const apiUrl = import.meta.env.VITE_API_BASE_URL
+import { ref, onMounted } from 'vue'
+
+import MerchantService from '@/modules/merchants/services/MerchantService'
+
+import Navbar from '@/components/layout/Navbar.vue'
+import Footer from '@/components/layout/Footer.vue'
+import HeroSearch from '@/components/dashboard/HeroSearch.vue'
+import MerchantCard from '@/components/dashboard/MerchantCard.vue'
+
+const merchants = ref([])
+
+const loading = ref(false)
+const errorMessage = ref('')
+
+const search = ref('')
+const location = ref('')
+
+const currentPage = ref(1)
+const lastPage = ref(1)
+const totalMerchants = ref(0)
+
+/**
+ * Fetch merchant listings from Laravel API.
+ */
+const fetchMerchants = async (page = 1) => {
+  loading.value = true
+  errorMessage.value = ''
+
+  try {
+    const response = await MerchantService.getAll({
+      search: search.value,
+      location: location.value,
+      page,
+      perPage: 12,
+    })
+
+    merchants.value = response.data || []
+    currentPage.value = response.current_page || 1
+    lastPage.value = response.last_page || 1
+    totalMerchants.value = response.total || 0
+  } catch (error) {
+    console.error('Merchant API Error:', error)
+
+    errorMessage.value =
+      error.response?.data?.message ||
+      'Gagal mengambil data merchant. Silakan coba kembali.'
+
+    merchants.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+/**
+ * Handle merchant search.
+ */
+const handleSearch = (payload) => {
+  search.value = payload.search || ''
+  location.value = payload.location || ''
+
+  fetchMerchants(1)
+}
+
+/**
+ * Handle pagination.
+ */
+const changePage = (page) => {
+  if (page < 1 || page > lastPage.value) return
+
+  fetchMerchants(page)
+}
+
+onMounted(() => {
+  fetchMerchants()
+})
 </script>
 
 <template>
-  <main class="flex min-h-screen items-center justify-center bg-slate-100 p-6">
-    <div class="w-full max-w-lg rounded-2xl bg-white p-8 shadow-xl">
+  <div class="min-h-screen bg-gray-50">
+    <Navbar />
 
-      <div class="mb-6 flex items-center gap-3">
-        <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-500 text-2xl text-white">
-          🍱
-        </div>
+    <main>
+      <HeroSearch @search="handleSearch" />
 
-        <div>
-          <h1 class="text-xl font-bold text-slate-800">
-            {{ appName }}
-          </h1>
+      <section class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div class="mb-8">
+          <h2 class="text-2xl font-bold text-gray-900">
+            Temukan Catering Terbaik
+          </h2>
 
-          <p class="text-sm text-slate-500">
-            Catering Marketplace
+          <p class="mt-2 text-gray-500">
+            {{ totalMerchants }} merchant tersedia
           </p>
         </div>
-      </div>
 
-      <div class="rounded-xl bg-green-50 p-4">
-        <p class="font-semibold text-green-700">
-          Vue Router berhasil berjalan!
-        </p>
+        <div
+          v-if="loading"
+          class="py-16 text-center text-gray-500"
+        >
+          Memuat data merchant...
+        </div>
 
-        <p class="mt-1 text-sm text-green-600">
-          Vue 3 + Vite + JavaScript + Tailwind CSS
-        </p>
-      </div>
+        <div
+          v-else-if="errorMessage"
+          class="rounded-xl bg-red-50 p-5 text-red-700"
+        >
+          {{ errorMessage }}
 
-      <div class="mt-6">
-        <p class="text-xs font-semibold uppercase text-slate-400">
-          Backend API
-        </p>
+          <button
+            class="ml-2 font-semibold underline"
+            @click="fetchMerchants(currentPage)"
+          >
+            Coba lagi
+          </button>
+        </div>
 
-        <p class="mt-1 break-all text-sm text-slate-700">
-          {{ apiUrl }}
-        </p>
-      </div>
+        <div
+          v-else-if="merchants.length === 0"
+          class="py-16 text-center text-gray-500"
+        >
+          Merchant tidak ditemukan.
+        </div>
 
-    </div>
-  </main>
+        <div
+          v-else
+          class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+        >
+          <MerchantCard
+            v-for="merchant in merchants"
+            :key="merchant.id"
+            :merchant="merchant"
+          />
+        </div>
+
+        <div
+          v-if="!loading && lastPage > 1"
+          class="mt-10 flex items-center justify-center gap-4"
+        >
+          <button
+            :disabled="currentPage <= 1"
+            class="rounded-lg border px-4 py-2 disabled:opacity-40"
+            @click="changePage(currentPage - 1)"
+          >
+            Sebelumnya
+          </button>
+
+          <span class="text-sm text-gray-600">
+            {{ currentPage }} / {{ lastPage }}
+          </span>
+
+          <button
+            :disabled="currentPage >= lastPage"
+            class="rounded-lg border px-4 py-2 disabled:opacity-40"
+            @click="changePage(currentPage + 1)"
+          >
+            Berikutnya
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <Footer />
+  </div>
 </template>
