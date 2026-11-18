@@ -2,6 +2,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 
+import MerchantLayout from '@/modules/merchant/layouts/MerchantLayout.vue'
+import MerchantDashboardView from '@/modules/merchant/views/MerchantDashboardView.vue'
+
 const routes = [
   {
     path: '/',
@@ -27,15 +30,44 @@ const routes = [
       guestOnly: true,
     },
   },
+
+  // Merchant workspace
   {
-    path: '/merchant/dashboard',
-    name: 'merchant-dashboard',
-    component: () => import('@/views/MerchantDashboardView.vue'),
+    path: '/merchant',
+    component: MerchantLayout,
     meta: {
       requiresAuth: true,
       roles: ['merchant'],
     },
+    children: [
+      {
+        path: 'dashboard',
+        name: 'merchant-dashboard',
+        component: MerchantDashboardView,
+        meta: {
+          title: 'Dashboard Merchant',
+        },
+      },
+      {
+        path: 'categories',
+        name: 'merchant-categories',
+        component: () => import('@/modules/merchant/views/MerchantCategoryView.vue'),
+        meta: {
+          title: 'Kategori Menu',
+        },
+      },
+      {
+        path: 'menus',
+        name: 'merchant-menus',
+        component: () => import('@/modules/merchant/views/MerchantMenuView.vue'),
+        meta: {
+          title: 'Menu Catering',
+        },
+      },
+    ],
   },
+
+  // Public merchant detail
   {
     path: '/merchant/:merchantId',
     name: 'merchant-detail',
@@ -44,6 +76,7 @@ const routes = [
       title: 'Detail Catering',
     },
   },
+
   {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
@@ -74,7 +107,6 @@ const router = createRouter({
 router.beforeEach(async (to) => {
   const authStore = useAuthStore()
 
-  // Pulihkan session sebelum memeriksa hak akses.
   await authStore.initializeAuth()
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
@@ -99,14 +131,14 @@ router.beforeEach(async (to) => {
     if (!to.meta.roles.includes(authStore.user?.role)) {
       return authStore.user?.role === 'merchant'
         ? { name: 'merchant-dashboard' }
-        : { path: '/home' }
+        : { path: '/' }
     }
   }
 
   if (to.meta.guestOnly && authStore.isAuthenticated) {
     return authStore.user?.role === 'merchant'
       ? { name: 'merchant-dashboard' }
-      : { path: '/home' }
+      : { path: '/' }
   }
 
   return true
