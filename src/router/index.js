@@ -95,6 +95,52 @@ const routes = [
     ],
   },
 
+  {
+    path: '/customer',
+    meta: {
+      requiresAuth: true,
+      roles: ['customer'],
+    },
+    children: [
+      {
+        path: 'cart',
+        name: 'customer-cart',
+        component: () =>
+          import('@/modules/customer/views/CustomerCartView.vue'),
+      },
+      {
+        path: 'checkout',
+        name: 'customer-checkout',
+        component: () =>
+          import('@/modules/customer/views/CustomerCheckoutView.vue'),
+      },
+      {
+        path: 'orders/:orderId',
+        name: 'customer-order-detail',
+        component: () =>
+          import('@/modules/customer/views/CustomerOrderDetailView.vue'),
+      },
+      {
+        path: 'orders',
+        name: 'customer-orders',
+        component: () =>
+          import('@/modules/customer/views/CustomerOrdersView.vue'),
+      },
+      {
+        path: 'invoices',
+        name: 'customer-invoices',
+        component: () =>
+          import('@/modules/customer/views/CustomerInvoicesView.vue'),
+      },
+      {
+        path: 'invoices/:invoiceId',
+        name: 'customer-invoice-detail',
+        component: () =>
+          import('@/modules/customer/views/CustomerInvoiceDetailView.vue'),
+      },
+    ],
+  },
+
   // Public merchant detail
   {
     path: '/merchant/:merchantId',
