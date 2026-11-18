@@ -35,6 +35,9 @@ const API_ROUTES = {
     BASE: '/invoices',
     DETAIL: (id) => `/invoices/${id}`,
   },
+  PROFILE: {
+    BASE: '/profile',
+  },
 }
 
 export default API_ROUTES

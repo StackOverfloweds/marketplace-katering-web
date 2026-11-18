@@ -92,6 +92,15 @@ const routes = [
           title: 'Invoice',
         },
       },
+      {
+        path: 'profile',
+        name: 'merchant-profile',
+        component: () =>
+          import('@/modules/merchant/views/MerchantProfileView.vue'),
+        meta: {
+          title: 'Profil Usaha',
+        },
+      },
     ],
   },
 
