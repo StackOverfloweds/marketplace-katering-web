@@ -20,6 +20,7 @@ const API_ROUTES = {
 
   MENUS: {
     BASE: '/menus',
+    MY: '/menus/my',
     DETAIL: (id) => `/menus/${id}`,
   },
 

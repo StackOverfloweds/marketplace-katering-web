@@ -1,91 +1,172 @@
 
 <script setup>
-import { useRoute, useRouter } from 'vue-router'
+import { ref } from 'vue'
+import { useRouter, useRoute, RouterLink } from 'vue-router'
+import { useAuthStore } from '@/stores/authStore'
+import AuthService from '@/modules/auth/components/AuthService'
 
-const route = useRoute()
 const router = useRouter()
+const route = useRoute()
+const authStore = useAuthStore()
+
+const loading = ref(false)
+const errorMessage = ref('')
+
+const form = ref({
+  username: '',
+  password: '',
+})
 
 /**
- * Return visitor to the requested page after authentication.
+ * Redirect user according to their account role.
  */
-const handleLoginPlaceholder = () => {
-  const redirect = route.query.redirect
-
-  if (typeof redirect === 'string' && redirect.startsWith('/')) {
-    router.push(redirect)
+const redirectByRole = (user) => {
+  if (user.role === 'merchant') {
+    router.replace('/merchant/dashboard')
     return
   }
 
-  router.push('/')
+  router.replace('/home')
+}
+
+/**
+ * Submit login form.
+ */
+const handleLogin = async () => {
+  loading.value = true
+  errorMessage.value = ''
+
+  try {
+    const response = await AuthService.login({
+      username: form.value.username,
+      password: form.value.password,
+      device_name: 'Web Browser',
+    })
+
+    const authData = response.data
+    const user = authData.user
+
+    authStore.setAuthentication(
+    authData.access_token,
+    user,
+    authData.refresh_token
+  )
+
+    // Gunakan redirect hanya jika tujuan sesuai dengan role.
+    const redirectPath = route.query.redirect
+
+    if (typeof redirectPath === 'string') {
+      const matchedRoute = router.resolve(redirectPath)
+      const allowedRoles = matchedRoute.meta?.roles
+
+      if (
+        matchedRoute.matched.length > 0 &&
+        (!allowedRoles || allowedRoles.includes(user.role))
+      ) {
+        router.replace(redirectPath)
+        return
+      }
+    }
+
+    redirectByRole(user)
+  } catch (error) {
+    console.error('Login error:', error)
+
+    errorMessage.value =
+      error.response?.data?.errors?.credentials?.[0] ||
+      error.response?.data?.message ||
+      'Username atau password salah.'
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 
 <template>
-  <main class="flex min-h-screen items-center justify-center bg-orange-50 px-4 py-10">
-    <div class="w-full max-w-md rounded-3xl bg-white p-8 shadow-xl shadow-orange-900/5">
-      <RouterLink to="/" class="flex items-center justify-center gap-2">
-        <span class="text-3xl">🍱</span>
-        <span class="text-xl font-extrabold text-slate-900">
-          Katering<span class="text-orange-500">Ku</span>
-        </span>
-      </RouterLink>
+  <main class="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-10">
+    <div class="w-full max-w-md">
 
-      <div class="mt-8 text-center">
-        <h1 class="text-2xl font-extrabold text-slate-900">
-          Selamat Datang
+      <!-- Header -->
+      <div class="mb-8 text-center">
+        <RouterLink
+          to="/home"
+          class="text-xl font-extrabold tracking-tight text-orange-600"
+        >
+          Marketplace Katering
+        </RouterLink>
+
+        <h1 class="mt-6 text-3xl font-bold text-gray-900">
+          Selamat Datang Kembali
         </h1>
 
-        <p class="mt-2 text-sm text-slate-500">
-          Silakan masuk untuk melanjutkan pemesanan.
+        <p class="mt-2 text-sm text-gray-500">
+          Login untuk melanjutkan aktivitas Anda.
         </p>
       </div>
 
-      <div class="mt-7 space-y-4">
-        <div>
-          <label class="mb-2 block text-sm font-semibold text-slate-700">
-            Username
-          </label>
+      <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
 
-          <input
-            type="text"
-            placeholder="Masukkan username"
-            disabled
-            class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"
-          />
-        </div>
-
-        <div>
-          <label class="mb-2 block text-sm font-semibold text-slate-700">
-            Password
-          </label>
-
-          <input
-            type="password"
-            placeholder="Masukkan password"
-            disabled
-            class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"
-          />
-        </div>
-
-        <div class="rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-700">
-          Halaman ini masih berupa placeholder. Authentication API akan
-          diintegrasikan pada tahap berikutnya.
-        </div>
-
-        <button
-          @click="handleLoginPlaceholder"
-          class="w-full rounded-xl bg-orange-500 py-3.5 text-sm font-bold text-white transition hover:bg-orange-600"
+        <div
+          v-if="errorMessage"
+          class="mb-5 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600"
         >
-          Kembali ke halaman sebelumnya
-        </button>
-      </div>
+          {{ errorMessage }}
+        </div>
 
-      <p class="mt-6 text-center text-sm text-slate-500">
-        Belum punya akun?
-        <RouterLink to="/register" class="font-bold text-orange-500">
-          Daftar sekarang
-        </RouterLink>
-      </p>
+        <form @submit.prevent="handleLogin" class="space-y-5">
+
+          <div>
+            <label class="mb-1.5 block text-sm font-medium text-gray-700">
+              Username
+            </label>
+
+            <input
+              v-model.trim="form.username"
+              type="text"
+              required
+              autocomplete="username"
+              placeholder="Masukkan username"
+              class="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+            />
+          </div>
+
+          <div>
+            <label class="mb-1.5 block text-sm font-medium text-gray-700">
+              Password
+            </label>
+
+            <input
+              v-model="form.password"
+              type="password"
+              required
+              autocomplete="current-password"
+              placeholder="Masukkan password"
+              class="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+            />
+          </div>
+
+          <button
+            type="submit"
+            :disabled="loading"
+            class="w-full rounded-lg bg-orange-600 py-3 font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {{ loading ? 'Sedang Login...' : 'Login' }}
+          </button>
+
+        </form>
+
+        <div class="mt-6 text-center text-sm text-gray-500">
+          Belum memiliki akun?
+
+          <RouterLink
+            to="/register"
+            class="font-semibold text-orange-600 hover:text-orange-700"
+          >
+            Daftar sekarang
+          </RouterLink>
+        </div>
+
+      </div>
     </div>
   </main>
 </template>
