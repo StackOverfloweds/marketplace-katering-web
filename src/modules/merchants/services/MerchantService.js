@@ -27,6 +27,23 @@ class MerchantService {
       API_ROUTES.MERCHANTS.DETAIL(id),
     )
   }
+
+  /**
+   * Search merchants by keyword and location.
+   */
+  static async search(params = {}) {
+    return await ApiHelper.get(
+      API_ROUTES.MERCHANTS.SEARCH,
+      {
+        search: params.search || undefined,
+        location: params.location || undefined,
+        category_id: params.categoryId || undefined,
+        per_page: params.perPage || 12,
+        page: params.page || 1,
+      },
+    )
+  }
 }
+
 
 export default MerchantService

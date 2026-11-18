@@ -1,255 +1,330 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-
-import MerchantService from '@/modules/merchants/services/MerchantService'
-
-import Navbar from '@/components/layout/Navbar.vue'
-import Footer from '@/components/layout/Footer.vue'
 import HeroSearch from '@/components/dashboard/HeroSearch.vue'
 import MerchantCard from '@/components/dashboard/MerchantCard.vue'
+import MerchantService from '@/modules/merchants/services/MerchantService'
 
+// Merchant
 const merchants = ref([])
-
 const loading = ref(false)
 const errorMessage = ref('')
 
-const search = ref('')
-const location = ref('')
+// Search
+const searchKeyword = ref('')
+const searchLocation = ref('')
+const isSearchMode = ref(false)
 
+// Pagination
 const currentPage = ref(1)
 const lastPage = ref(1)
+const perPage = ref(12)
 const totalMerchants = ref(0)
 
-let requestId = 0
-
-
-
 /**
- * Normalize API response into a consistent format.
+ * Menyimpan data merchant dan informasi pagination.
+ * Mendukung response pagination Laravel maupun response search custom.
  */
-const normalizeResponse = (response) => {
-  // Full Laravel JSON response:
-  // response.data.data = merchant array
-  const paginator = response?.data
+const setMerchantData = (response) => {
+  const payload = response.data || {}
 
-  if (
-    paginator &&
-    !Array.isArray(paginator) &&
-    Array.isArray(paginator.data)
-  ) {
-    return {
-      merchants: paginator.data,
-      currentPage: paginator.current_page || 1,
-      lastPage: paginator.last_page || 1,
-      total: paginator.total ?? paginator.data.length,
-    }
-  }
+  merchants.value = Array.isArray(payload)
+    ? payload
+    : payload.data || []
 
-  // Custom JSON response:
-  // response.data = merchant array
-  if (Array.isArray(paginator)) {
-    const meta = response.meta || {}
+  const pagination = response.meta || payload.meta || payload
 
-    return {
-      merchants: paginator,
-      currentPage: meta.current_page || 1,
-      lastPage: meta.last_page || 1,
-      total: meta.total ?? paginator.length,
-    }
-  }
-
-  // In case the service returns paginator directly.
-  if (Array.isArray(response?.data?.data)) {
-    const data = response.data
-
-    return {
-      merchants: data.data,
-      currentPage: data.current_page || 1,
-      lastPage: data.last_page || 1,
-      total: data.total ?? data.data.length,
-    }
-  }
-
-  return {
-    merchants: [],
-    currentPage: 1,
-    lastPage: 1,
-    total: 0,
-  }
+  currentPage.value = pagination.current_page || 1
+  lastPage.value = pagination.last_page || 1
+  totalMerchants.value = pagination.total || 0
 }
 
 /**
- * Fetch merchant listings from Laravel API.
+ * Mengambil seluruh merchant tanpa filter pencarian.
  */
 const fetchMerchants = async (page = 1) => {
-  const currentRequestId = ++requestId
-
   loading.value = true
   errorMessage.value = ''
 
   try {
     const response = await MerchantService.getAll({
-      search: search.value,
-      location: location.value,
+      per_page: perPage.value,
       page,
-      perPage: 12,
     })
 
-    if (currentRequestId !== requestId) return
-
-    console.log('FULL MERCHANT RESPONSE:', response)
-
-    const result = normalizeResponse(response)
-
-    merchants.value = result.merchants
-    currentPage.value = result.currentPage
-    lastPage.value = result.lastPage
-    totalMerchants.value = result.total
-
-    console.log('MERCHANT ARRAY:', merchants.value)
-    console.log('MERCHANT ARRAY LENGTH:', merchants.value.length)
-
+    setMerchantData(response)
   } catch (error) {
-    if (currentRequestId !== requestId) return
-
-    console.error('Merchant API Error:', error)
-
-    errorMessage.value =
-      error.response?.data?.message ||
-      'Gagal mengambil data merchant. Silakan coba kembali.'
+    console.error('Gagal mengambil data merchant:', error)
 
     merchants.value = []
-    totalMerchants.value = 0
-
+    errorMessage.value =
+      error.response?.data?.message ||
+      'Gagal mengambil daftar catering.'
   } finally {
-    if (currentRequestId === requestId) {
-      loading.value = false
-    }
+    loading.value = false
   }
 }
 
 /**
- * Handle merchant search.
+ * Mengambil merchant berdasarkan pencarian.
+ * Hanya dijalankan ketika pengguna melakukan search.
+ */
+const searchMerchants = async (page = 1) => {
+  loading.value = true
+  errorMessage.value = ''
+
+  try {
+    const response = await MerchantService.search({
+      search: searchKeyword.value,
+      location: searchLocation.value,
+      per_page: perPage.value,
+      page,
+    })
+
+    setMerchantData(response)
+  } catch (error) {
+    console.error('Gagal melakukan pencarian merchant:', error)
+
+    merchants.value = []
+    errorMessage.value =
+      error.response?.data?.message ||
+      'Gagal mencari catering.'
+  } finally {
+    loading.value = false
+  }
+}
+
+/**
+ * Event ketika tombol Cari Katering ditekan.
  */
 const handleSearch = (payload = {}) => {
-  search.value = payload.search || ''
-  location.value = payload.location || ''
+  searchKeyword.value = (payload.search || '').trim()
+  searchLocation.value = (payload.location || '').trim()
+
+  // Jika kedua input kosong, tampilkan semua merchant.
+  if (!searchKeyword.value && !searchLocation.value) {
+    resetSearch()
+    return
+  }
+
+  isSearchMode.value = true
+  searchMerchants(1)
+}
+
+/**
+ * Reset pencarian dan kembali menampilkan seluruh merchant.
+ */
+const resetSearch = () => {
+  searchKeyword.value = ''
+  searchLocation.value = ''
+  isSearchMode.value = false
 
   fetchMerchants(1)
 }
 
 /**
- * Handle pagination.
+ * Menangani perpindahan halaman sesuai mode.
  */
 const changePage = (page) => {
-  if (loading.value || page < 1 || page > lastPage.value) {
+  if (page < 1 || page > lastPage.value || loading.value) {
     return
   }
 
-  fetchMerchants(page)
+  if (isSearchMode.value) {
+    searchMerchants(page)
+  } else {
+    fetchMerchants(page)
+  }
+
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth',
+  })
 }
 
+/**
+ * Mengambil semua merchant ketika halaman pertama kali dibuka.
+ */
 onMounted(() => {
-  fetchMerchants()
+  fetchMerchants(1)
 })
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <Navbar />
+  <main class="min-h-screen bg-gray-50">
+    <!-- Hero -->
+    <section class="bg-white">
+      <HeroSearch
+        @search="handleSearch"
+        @reset="resetSearch"
+      />
+    </section>
 
-    <main>
-      <HeroSearch @search="handleSearch" />
+    <!-- Merchant Listing -->
+    <section class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
 
-      <section class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      <div class="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+        <div>
+          <p class="mb-2 text-sm font-semibold uppercase tracking-wider text-orange-600">
+            Jelajahi Catering
+          </p>
 
-        <div class="mb-8">
-          <h2 class="text-2xl font-bold text-gray-900">
-            Temukan Catering Terbaik
-          </h2>
+          <h1 class="text-2xl font-bold text-gray-900 sm:text-3xl">
+            {{ isSearchMode ? 'Hasil Pencarian Catering' : 'Pilihan Catering Terbaik' }}
+          </h1>
 
-          <p class="mt-2 text-gray-500">
-            {{ totalMerchants }} merchant tersedia
+          <p class="mt-2 text-sm text-gray-500">
+            {{
+              isSearchMode
+                ? 'Berikut catering yang sesuai dengan pencarian Anda.'
+                : 'Temukan catering sesuai kebutuhan dan lokasi Anda.'
+            }}
           </p>
         </div>
 
-        <div
-          v-if="loading && merchants.length === 0"
-          class="py-16 text-center text-gray-500"
+        <button
+          v-if="isSearchMode"
+          type="button"
+          @click="resetSearch"
+          class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 transition hover:border-orange-500 hover:text-orange-600"
         >
-          Memuat data merchant...
+          Tampilkan Semua
+        </button>
+      </div>
+
+      <!-- Informasi Filter -->
+      <div
+        v-if="isSearchMode"
+        class="mb-6 rounded-xl border border-orange-100 bg-orange-50 p-4"
+      >
+        <p class="text-sm text-gray-700">
+          Hasil pencarian
+
+          <span v-if="searchKeyword" class="font-semibold">
+            "{{ searchKeyword }}"
+          </span>
+
+          <span v-if="searchLocation">
+            di <strong>{{ searchLocation }}</strong>
+          </span>
+        </p>
+      </div>
+
+      <!-- Loading -->
+      <div
+        v-if="loading"
+        class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+      >
+        <div
+          v-for="item in 6"
+          :key="item"
+          class="animate-pulse overflow-hidden rounded-2xl bg-white shadow-sm"
+        >
+          <div class="h-48 bg-gray-200"></div>
+
+          <div class="space-y-3 p-5">
+            <div class="h-5 w-2/3 rounded bg-gray-200"></div>
+            <div class="h-4 w-full rounded bg-gray-200"></div>
+            <div class="h-4 w-1/2 rounded bg-gray-200"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error -->
+      <div
+        v-else-if="errorMessage"
+        class="rounded-xl border border-red-200 bg-red-50 p-6 text-center"
+      >
+        <p class="font-medium text-red-600">
+          {{ errorMessage }}
+        </p>
+
+        <button
+          type="button"
+          @click="isSearchMode ? searchMerchants(currentPage) : fetchMerchants(currentPage)"
+          class="mt-4 rounded-lg bg-red-600 px-5 py-2 text-sm font-semibold text-white hover:bg-red-700"
+        >
+          Coba Lagi
+        </button>
+      </div>
+
+      <template v-else>
+        <!-- Merchant Cards -->
+        <div
+          v-if="merchants.length > 0"
+          class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+        >
+          <MerchantCard
+            v-for="merchant in merchants"
+            :key="merchant.id"
+            :merchant="merchant"
+          />
         </div>
 
+        <!-- Empty State -->
         <div
-          v-else-if="errorMessage"
-          class="rounded-xl bg-red-50 p-5 text-center text-red-700"
+          v-else
+          class="rounded-2xl border border-dashed border-gray-300 bg-white px-6 py-16 text-center"
         >
-          {{ errorMessage }}
+          <div class="mb-4 text-5xl">🔍</div>
+
+          <h3 class="text-lg font-semibold text-gray-900">
+            {{ isSearchMode ? 'Catering Tidak Ditemukan' : 'Belum Ada Catering' }}
+          </h3>
+
+          <p class="mx-auto mt-2 max-w-md text-sm text-gray-500">
+            {{
+              isSearchMode
+                ? 'Tidak ada catering yang sesuai dengan kata kunci atau lokasi tersebut.'
+                : 'Saat ini belum ada catering yang tersedia.'
+            }}
+          </p>
 
           <button
-            class="ml-2 font-semibold underline"
-            @click="fetchMerchants(currentPage)"
+            v-if="isSearchMode"
+            type="button"
+            @click="resetSearch"
+            class="mt-6 rounded-lg bg-orange-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-orange-700"
           >
-            Coba lagi
+            Tampilkan Semua Catering
           </button>
         </div>
 
+        <!-- Pagination -->
         <div
-          v-else-if="merchants.length === 0"
-          class="rounded-xl bg-white py-16 text-center"
+          v-if="merchants.length > 0 && lastPage > 1"
+          class="mt-12 flex flex-col items-center justify-between gap-4 border-t border-gray-200 pt-6 sm:flex-row"
         >
-          <div class="mb-3 text-5xl">🔍</div>
-
-          <h3 class="font-semibold text-gray-900">
-            Merchant tidak ditemukan
-          </h3>
-
-          <p class="mt-2 text-sm text-gray-500">
-            Coba gunakan kata kunci pencarian lainnya.
+          <p class="text-sm text-gray-500">
+            Halaman {{ currentPage }} dari {{ lastPage }}
+            ({{ totalMerchants }} merchant)
           </p>
-        </div>
 
-        <template v-else>
-          <div
-            class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
-          >
-            <MerchantCard
-              v-for="merchant in merchants"
-              :key="merchant.id"
-              :merchant="merchant"
-            />
-          </div>
-
-          <div
-            v-if="lastPage > 1"
-            class="mt-10 flex items-center justify-center gap-4"
-          >
+          <div class="flex items-center gap-2">
             <button
-              :disabled="currentPage <= 1 || loading"
-              class="rounded-lg border px-4 py-2 disabled:opacity-40"
+              type="button"
+              :disabled="currentPage === 1 || loading"
               @click="changePage(currentPage - 1)"
+              class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 disabled:opacity-40"
             >
               Sebelumnya
             </button>
 
-            <span class="text-sm text-gray-600">
-              {{ currentPage }} / {{ lastPage }}
+            <span class="px-3 text-sm font-semibold text-gray-900">
+              {{ currentPage }}
             </span>
 
             <button
-              :disabled="currentPage >= lastPage || loading"
-              class="rounded-lg border px-4 py-2 disabled:opacity-40"
+              type="button"
+              :disabled="currentPage === lastPage || loading"
               @click="changePage(currentPage + 1)"
+              class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 disabled:opacity-40"
             >
-              Berikutnya
+              Selanjutnya
             </button>
           </div>
-        </template>
-
-      </section>
-    </main>
-
-    <Footer />
-  </div>
+        </div>
+      </template>
+    </section>
+  </main>
 </template>
