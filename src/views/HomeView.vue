@@ -3,7 +3,7 @@
 import { ref, onMounted } from 'vue'
 import HeroSearch from '@/components/dashboard/HeroSearch.vue'
 import MerchantCard from '@/components/dashboard/MerchantCard.vue'
-import MerchantService from '@/modules/merchants/services/MerchantService'
+import MerchantService from '@/modules/merchant/services/MerchantService'
 
 // Merchant
 const merchants = ref([])

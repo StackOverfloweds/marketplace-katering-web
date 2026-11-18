@@ -3,7 +3,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 
-import MerchantService from '@/modules/merchants/services/MerchantService'
+import MerchantService from '@/modules/merchant/services/MerchantService'
 import MenuImage from '@/components/common/MenuImage.vue'
 import Navbar from '@/components/layout/Navbar.vue'
 import Footer from '@/components/layout/Footer.vue'
