@@ -27,10 +27,9 @@ const API_ROUTES = {
   ORDERS: {
     BASE: '/orders',
     DETAIL: (id) => `/orders/${id}`,
-    CANCEL: (id) => `/orders/${id}/cancel`,
     UPDATE_STATUS: (id) => `/orders/${id}/status`,
   },
-
+  
   INVOICES: {
     BASE: '/invoices',
     DETAIL: (id) => `/invoices/${id}`,
