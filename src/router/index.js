@@ -16,7 +16,7 @@ const routes = [
     name: 'login',
     component: () => import('@/views/LoginView.vue'),
     meta: {
-      title: 'Masuk',
+      guestOnly: true,
     },
   },
   {
@@ -24,7 +24,16 @@ const routes = [
     name: 'register',
     component: () => import('@/views/RegisterView.vue'),
     meta: {
-      title: 'Daftar',
+      guestOnly: true,
+    },
+  },
+  {
+    path: '/merchant/dashboard',
+    name: 'merchant-dashboard',
+    component: () => import('@/views/MerchantDashboardView.vue'),
+    meta: {
+      requiresAuth: true,
+      roles: ['merchant'],
     },
   },
   {
@@ -72,6 +81,21 @@ router.beforeEach((to) => {
         redirect: to.fullPath,
       },
     }
+  }
+
+  if (
+    to.meta.roles &&
+    !to.meta.roles.includes(authStore.user?.role)
+  ) {
+    return authStore.user?.role === 'merchant'
+      ? { name: 'merchant-dashboard' }
+      : { path: '/home' }
+  }
+
+  if (to.meta.guestOnly && authStore.isAuthenticated) {
+    return authStore.user?.role === 'merchant'
+      ? { name: 'merchant-dashboard' }
+      : { path: '/home' }
   }
 })
 

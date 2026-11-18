@@ -1,6 +1,6 @@
 
 import { defineStore } from 'pinia'
-import { computed, ref } from 'vue'
+import { ref, computed } from 'vue'
 import {
   setAccessToken,
   clearAccessToken,
@@ -10,17 +10,14 @@ export const useAuthStore = defineStore('auth', () => {
   const accessToken = ref(null)
   const user = ref(null)
 
-  /**
-   * Determine whether user is authenticated.
-   */
   const isAuthenticated = computed(() => {
     return Boolean(accessToken.value)
   })
 
   /**
-   * Set authentication data after successful login.
+   * Save authentication data after successful login or registration.
    */
-  const setAuthentication = (token, userData = null) => {
+  const setAuthentication = (token, userData) => {
     accessToken.value = token
     user.value = userData
 
@@ -28,7 +25,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   /**
-   * Clear authentication data.
+   * Clear authentication data from the application.
    */
   const clearAuthentication = () => {
     accessToken.value = null
