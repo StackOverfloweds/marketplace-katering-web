@@ -348,10 +348,3 @@ Frontend ini terhubung dengan repository backend:
 
 Pastikan backend berjalan dan `VITE_API_BASE_URL` mengarah ke alamat API
 yang benar sebelum menguji integrasi.
-
-------------------------------------------------------------------------
-
-## License
-
-Tentukan lisensi repository sebelum project dipublikasikan atau
-digunakan oleh pihak lain.
