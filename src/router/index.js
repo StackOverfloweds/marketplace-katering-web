@@ -5,6 +5,10 @@ import { useAuthStore } from '@/stores/authStore'
 import MerchantLayout from '@/modules/merchant/layouts/MerchantLayout.vue'
 import MerchantDashboardView from '@/modules/merchant/views/MerchantDashboardView.vue'
 
+import MerchantOrderView from '@/modules/merchant/views/MerchantOrderView.vue'
+import MerchantOrderDetailView from '@/modules/merchant/views/MerchantOrderDetailView.vue'
+import MerchantInvoiceView from '@/modules/merchant/views/MerchantInvoiceView.vue'
+
 const routes = [
   {
     path: '/',
@@ -63,6 +67,85 @@ const routes = [
         meta: {
           title: 'Menu Catering',
         },
+      },
+      {
+        path: 'orders',
+        name: 'merchant-orders',
+        component: MerchantOrderView,
+        meta: {
+          title: 'Pesanan Masuk',
+        },
+      },
+      {
+        path: 'orders/:orderId',
+        name: 'merchant-order-detail',
+        component: MerchantOrderDetailView,
+        meta: {
+          title: 'Detail Pesanan',
+        },
+      },
+      {
+        path: 'invoices',
+        name: 'merchant-invoices',
+        component: MerchantInvoiceView,
+        meta: {
+          title: 'Invoice',
+        },
+      },
+      {
+        path: 'profile',
+        name: 'merchant-profile',
+        component: () =>
+          import('@/modules/merchant/views/MerchantProfileView.vue'),
+        meta: {
+          title: 'Profil Usaha',
+        },
+      },
+    ],
+  },
+
+  {
+    path: '/customer',
+    meta: {
+      requiresAuth: true,
+      roles: ['customer'],
+    },
+    children: [
+      {
+        path: 'cart',
+        name: 'customer-cart',
+        component: () =>
+          import('@/modules/customer/views/CustomerCartView.vue'),
+      },
+      {
+        path: 'checkout',
+        name: 'customer-checkout',
+        component: () =>
+          import('@/modules/customer/views/CustomerCheckoutView.vue'),
+      },
+      {
+        path: 'orders/:orderId',
+        name: 'customer-order-detail',
+        component: () =>
+          import('@/modules/customer/views/CustomerOrderDetailView.vue'),
+      },
+      {
+        path: 'orders',
+        name: 'customer-orders',
+        component: () =>
+          import('@/modules/customer/views/CustomerOrdersView.vue'),
+      },
+      {
+        path: 'invoices',
+        name: 'customer-invoices',
+        component: () =>
+          import('@/modules/customer/views/CustomerInvoicesView.vue'),
+      },
+      {
+        path: 'invoices/:invoiceId',
+        name: 'customer-invoice-detail',
+        component: () =>
+          import('@/modules/customer/views/CustomerInvoiceDetailView.vue'),
       },
     ],
   },

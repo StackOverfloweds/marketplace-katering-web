@@ -62,7 +62,7 @@ const handleLogout = async () => {
 
       <!-- Logo -->
       <RouterLink
-        :to="isMerchant ? '/merchant/dashboard' : '/home'"
+        :to="isMerchant ? '/merchant/dashboard' : '/'"
         class="flex items-center gap-2"
         @click="closeMobileMenu"
       >
@@ -80,68 +80,90 @@ const handleLogout = async () => {
         </div>
       </RouterLink>
 
-      <!-- Desktop Navigation -->
-      <div class="hidden items-center gap-7 md:flex">
+      
+    <!-- Desktop Navigation -->
+    <div class="hidden items-center gap-7 md:flex">
 
-        <!-- Guest -->
-        <template v-if="!isAuthenticated">
-          <RouterLink
-            to="/home"
-            class="text-sm font-medium text-gray-600 transition hover:text-orange-600"
-          >
-            Beranda
-          </RouterLink>
-        </template>
+    <!-- Guest -->
+    <template v-if="!isAuthenticated">
+      <RouterLink
+        to="/"
+        class="text-sm font-medium text-gray-600 transition hover:text-orange-600"
+      >
+        Beranda
+      </RouterLink>
+    </template>
+   
+      <!-- Customer -->
+      <template v-else-if="isCustomer">
 
-        <!-- Customer -->
-        <template v-else-if="isCustomer">
-          <RouterLink
-            to="/home"
-            class="text-sm font-medium text-gray-600 transition hover:text-orange-600"
-          >
-            Beranda
-          </RouterLink>
+        <RouterLink
+          to="/"
+          @click="closeMobileMenu"
+          class="rounded-lg px-3 py-3 text-sm text-gray-700 hover:bg-gray-50"
+        >
+          Beranda
+        </RouterLink>
 
-          <RouterLink
-            to="/orders"
-            class="text-sm font-medium text-gray-600 transition hover:text-orange-600"
-          >
-            Pesanan Saya
-          </RouterLink>
+        <RouterLink
+          :to="{ name: 'customer-cart' }"
+          @click="closeMobileMenu"
+          class="rounded-lg px-3 py-3 text-sm text-gray-700 hover:bg-gray-50"
+        >
+          Keranjang
+        </RouterLink>
 
-          <RouterLink
-            to="/profile"
-            class="text-sm font-medium text-gray-600 transition hover:text-orange-600"
-          >
-            Profil
-          </RouterLink>
-        </template>
+        <RouterLink
+          :to="{ name: 'customer-orders' }"
+          @click="closeMobileMenu"
+          class="rounded-lg px-3 py-3 text-sm text-gray-700 hover:bg-gray-50"
+        >
+          Pesanan Saya
+        </RouterLink>
 
-        <!-- Merchant -->
-        <template v-else-if="isMerchant">
-          <RouterLink
-            to="/merchant/dashboard"
-            class="text-sm font-medium text-gray-600 transition hover:text-orange-600"
-          >
-            Dashboard
-          </RouterLink>
+        <RouterLink
+          :to="{ name: 'customer-invoices' }"
+          @click="closeMobileMenu"
+          class="rounded-lg px-3 py-3 text-sm text-gray-700 hover:bg-gray-50"
+        >
+          Invoice
+        </RouterLink>
+      </template>
 
-          <RouterLink
-            to="/merchant/menus"
-            class="text-sm font-medium text-gray-600 transition hover:text-orange-600"
-          >
-            Menu Catering
-          </RouterLink>
 
-          <RouterLink
-            to="/merchant/orders"
-            class="text-sm font-medium text-gray-600 transition hover:text-orange-600"
-          >
-            Pesanan Masuk
-          </RouterLink>
-        </template>
+    <!-- Merchant -->
+    <template v-else-if="isMerchant">
+      <RouterLink
+        to="/merchant/dashboard"
+        class="text-sm font-medium text-gray-600 transition hover:text-orange-600"
+      >
+        Dashboard
+      </RouterLink>
 
-      </div>
+      <RouterLink
+        to="/merchant/menus"
+        class="text-sm font-medium text-gray-600 transition hover:text-orange-600"
+      >
+        Menu Catering
+      </RouterLink>
+
+      <RouterLink
+        to="/merchant/orders"
+        class="text-sm font-medium text-gray-600 transition hover:text-orange-600"
+      >
+        Pesanan Masuk
+      </RouterLink>
+
+      <RouterLink
+        to="/merchant/invoices"
+        class="text-sm font-medium text-gray-600 transition hover:text-orange-600"
+      >
+        Invoice
+      </RouterLink>
+    </template>
+
+    </div>
+
 
       <!-- Desktop Authentication -->
       <div class="hidden items-center gap-3 md:flex">
