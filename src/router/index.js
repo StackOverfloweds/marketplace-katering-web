@@ -5,6 +5,10 @@ import { useAuthStore } from '@/stores/authStore'
 import MerchantLayout from '@/modules/merchant/layouts/MerchantLayout.vue'
 import MerchantDashboardView from '@/modules/merchant/views/MerchantDashboardView.vue'
 
+import MerchantOrderView from '@/modules/merchant/views/MerchantOrderView.vue'
+import MerchantOrderDetailView from '@/modules/merchant/views/MerchantOrderDetailView.vue'
+import MerchantInvoiceView from '@/modules/merchant/views/MerchantInvoiceView.vue'
+
 const routes = [
   {
     path: '/',
@@ -62,6 +66,30 @@ const routes = [
         component: () => import('@/modules/merchant/views/MerchantMenuView.vue'),
         meta: {
           title: 'Menu Catering',
+        },
+      },
+      {
+        path: 'orders',
+        name: 'merchant-orders',
+        component: MerchantOrderView,
+        meta: {
+          title: 'Pesanan Masuk',
+        },
+      },
+      {
+        path: 'orders/:orderId',
+        name: 'merchant-order-detail',
+        component: MerchantOrderDetailView,
+        meta: {
+          title: 'Detail Pesanan',
+        },
+      },
+      {
+        path: 'invoices',
+        name: 'merchant-invoices',
+        component: MerchantInvoiceView,
+        meta: {
+          title: 'Invoice',
         },
       },
     ],
