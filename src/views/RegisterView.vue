@@ -83,9 +83,10 @@ const handleRegister = async () => {
     const user = authData.user
 
     authStore.setAuthentication(
-      authData.access_token,
-      user
-    )
+    authData.access_token,
+    user,
+    authData.refresh_token
+  )
 
     redirectByRole(user)
   } catch (error) {

@@ -71,8 +71,11 @@ const router = createRouter({
   },
 })
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   const authStore = useAuthStore()
+
+  // Pulihkan session sebelum memeriksa hak akses.
+  await authStore.initializeAuth()
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     return {
@@ -83,13 +86,21 @@ router.beforeEach((to) => {
     }
   }
 
-  if (
-    to.meta.roles &&
-    !to.meta.roles.includes(authStore.user?.role)
-  ) {
-    return authStore.user?.role === 'merchant'
-      ? { name: 'merchant-dashboard' }
-      : { path: '/home' }
+  if (to.meta.roles) {
+    if (!authStore.isAuthenticated) {
+      return {
+        name: 'login',
+        query: {
+          redirect: to.fullPath,
+        },
+      }
+    }
+
+    if (!to.meta.roles.includes(authStore.user?.role)) {
+      return authStore.user?.role === 'merchant'
+        ? { name: 'merchant-dashboard' }
+        : { path: '/home' }
+    }
   }
 
   if (to.meta.guestOnly && authStore.isAuthenticated) {
@@ -97,6 +108,8 @@ router.beforeEach((to) => {
       ? { name: 'merchant-dashboard' }
       : { path: '/home' }
   }
+
+  return true
 })
 
 router.afterEach((to) => {

@@ -24,6 +24,18 @@ const AuthService = {
   },
 
   /**
+   * Refresh authentication tokens.
+   */
+  async refresh(refreshToken) {
+    return await ApiHelper.post(
+      API_ROUTES.AUTH.REFRESH,
+      {
+        refresh_token: refreshToken,
+      }
+    )
+  },
+
+  /**
    * Retrieve authenticated user information.
    */
   async me() {

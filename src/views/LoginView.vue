@@ -47,9 +47,10 @@ const handleLogin = async () => {
     const user = authData.user
 
     authStore.setAuthentication(
-      authData.access_token,
-      user
-    )
+    authData.access_token,
+    user,
+    authData.refresh_token
+  )
 
     // Gunakan redirect hanya jika tujuan sesuai dengan role.
     const redirectPath = route.query.redirect
